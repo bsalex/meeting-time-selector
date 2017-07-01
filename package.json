@@ -1,0 +1,32 @@
+{
+  "name": "meeting-time-selector",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "dev": "webpack-dev-server --host 0.0.0.0 --config \"./build/webpack.config.dev.js\" --watch --progress --hot --inline"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/bsalex/meeting-time-selector.git"
+  },
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/bsalex/meeting-time-selector/issues"
+  },
+  "homepage": "https://github.com/bsalex/meeting-time-selector#readme",
+  "devDependencies": {
+    "css-loader": "^0.28.4",
+    "elm-webpack-loader": "^4.3.1",
+    "file-loader": "^0.11.2",
+    "html-webpack-plugin": "^2.29.0",
+    "postcss": "^6.0.4",
+    "postcss-nested": "^2.0.2",
+    "postcss-url": "^7.0.0",
+    "style-loader": "^0.18.2",
+    "webpack": "^3.0.0",
+    "webpack-dev-server": "^2.5.0"
+  }
+}
