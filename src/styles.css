@@ -1,51 +1,70 @@
-.app {
+body * {
+  box-sizing: border-box;
+}
 
+.app {
 }
 
 .app__header {
-    background-color: #2af;
-    color: #fff;
+  background-color: #2af;
+  color: #fff;
+}
+
+.app__timelines {
+  position: relative;
 }
 
 .timeline {
-    height: 50px;
-    display: flex;
-    justify-content: space-between;
-    border-top: 2px solid black;
+  height: 50px;
+  display: flex;
+  justify-content: space-between;
+  border-top: 2px solid black;
 }
 
 .timeline__item {
-    flex: 1 1 0;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    position: relative;
+  flex: 1 1 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
 }
 
 .timeline__item--good {
-    background-color: #32CD32;
+  background-color: #32CD32;
 }
 
 .timeline__item--bad {
-    background-color: #fc3434;
+  background-color: #fc3434;
 }
 
 .timeline__item::before {
-    content: '';
-    width: 0;
-    height: 5px;
-    border-left: 1px solid black;
-    top: 0;
-    left: 0;
-    position: absolute;
+  content: '';
+  width: 0;
+  height: 5px;
+  border-left: 1px solid black;
+  top: 0;
+  left: 0;
+  position: absolute;
 }
 
 .timeline__item:last-child::after {
-    content: '';
-    width: 0;
-    height: 5px;
-    border-left: 1px solid black;
-    top: 0;
-    right: 0;
-    position: absolute;
+  content: '';
+  width: 0;
+  height: 5px;
+  border-left: 1px solid black;
+  top: 0;
+  right: 0;
+  position: absolute;
+}
+
+.meeting-indicator {
+  background-color: #008fff;
+  border: 2px solid #004478;
+  opacity: 0.3;
+  top: 0;
+  bottom: 0;
+  left: 10%;
+  width: 10%;
+  position: absolute;
+  z-index: 1;
 }
