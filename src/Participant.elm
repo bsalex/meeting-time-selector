@@ -7,14 +7,8 @@ import Html.Events exposing (..)
 
 type alias Model =
     { timeZone : Int
+    , goodHours : List Int
     }
-
-
-model : Model
-model =
-    { timeZone = 0
-    }
-
 
 type Msg
     = ChangeTimeZone String
@@ -39,7 +33,12 @@ view model =
             , class "participant__timezone"
             , type_ "number"
             , onInput ChangeTimeZone
+            , Html.Attributes.max "12"
+            , Html.Attributes.min "-12"
             ]
             []
         , button [ class "participant__remove", onClick Remove ] [ text "🗙" ]
         ]
+
+init : Model
+init = Model 0 (List.range 9 17)

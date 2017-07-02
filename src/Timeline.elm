@@ -5,14 +5,9 @@ import Html.Attributes exposing (..)
 import ListRotate
 
 
-goodHours : List Int
-goodHours =
-    List.range 9 18
-
-
-view : Int -> Html msg
-view shift =
-    div [ class "timeline" ]
+view : Int -> List Int -> List (Html.Attribute msg) -> Html msg
+view shift goodHours attributes =
+    div (List.concat [ [ class "timeline" ], attributes ])
         (List.map
             (\number ->
                 div
