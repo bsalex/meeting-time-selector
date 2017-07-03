@@ -2,11 +2,9 @@ module CitySelector exposing (..)
 
 import Autocomplete
 import Html exposing (..)
-import Http
 import Html.Attributes exposing (..)
 import Html.Events exposing (..)
 import Json.Decode as Decode
-import Json.Encode as JE
 import Dom
 import Task
 
@@ -26,9 +24,10 @@ type alias Place =
     , placeId : String
     }
 
+
 init : Model
 init =
-    { places = [Place "123" "456"]
+    { places = []
     , autoState = Autocomplete.empty
     , howManyToShow = 5
     , query = ""
@@ -47,34 +46,18 @@ type Msg
     | SelectPlaceMouse String
     | PreviewPlace String
     | OnFocus
-    | GotPlaces (Result Http.Error (List Place))
-    | StartGetPlaces
     | NoOp
-
-getPlaces : String -> Cmd Msg
-getPlaces query =
-  Http.send GotPlaces <|
-      Http.get "https://maps.googleapis.com/maps/api/place/autocomplete/json?input=New&types=(cities)&key=AIzaSyDH0-kCc8IGX7KBKx3auFoln-9j0vegn-M" decodePlaces
-
-decodePlaces : Decode.Decoder (List Place)
-decodePlaces =
-  Decode.at ["predictions"] (Decode.list (Decode.map2 Place
-                                            (Decode.field "description" Decode.string)
-                                            (Decode.field "place_id" Decode.string)))
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
     case msg of
-        StartGetPlaces ->
-            (model, getPlaces model.query)
-
         SetQuery newQuery ->
             let
                 showMenu =
                     not << List.isEmpty <| (acceptablePlaces newQuery model.places)
             in
-                { model | query = newQuery, showMenu = True, selectedPlace = Nothing } ! [ getPlaces "" ]
+                { model | query = newQuery, showMenu = True, selectedPlace = Nothing } ! []
 
         SetAutoState autoMsg ->
             let
@@ -166,12 +149,6 @@ update msg model =
         NoOp ->
             model ! []
 
-        GotPlaces (Ok newPlaces) ->
-            ( { model | places = Debug.log "places" <| newPlaces }, Cmd.none)
-
-        GotPlaces (Err _) ->
-            (model, Cmd.none)
-
 
 resetInput model =
     { model | query = "" }
@@ -246,40 +223,27 @@ view model =
 
                 Nothing ->
                     model.query
-
-        activeDescendant attributes =
-            case model.selectedPlace of
-                Just place ->
-                    (attribute "aria-activedescendant"
-                        place.description
-                    )
-                        :: attributes
-
-                Nothing ->
-                    attributes
     in
         div []
             (List.append
                 [ input
-                    (activeDescendant
-                        [ onInput SetQuery
-                        , onFocus OnFocus
-                        , onWithOptions "keydown" options dec
-                        , value query
-                        , id "president-input"
-                        , class "autocomplete-input"
-                        , autocomplete False
-                        ]
-                    )
+                    [ onInput SetQuery
+                    , onFocus OnFocus
+                    , onWithOptions "keydown" options dec
+                    , value query
+                    , id "president-input"
+                    , class "autocomplete-input"
+                    , autocomplete False
+                    ]
                     []
-                , button [ onClick StartGetPlaces ] [ text "Get one" ]
                 ]
                 menu
             )
 
 
 acceptablePlaces : String -> List Place -> List Place
-acceptablePlaces query places = places
+acceptablePlaces query places =
+    places
 
 
 viewMenu : Model -> Html Msg
@@ -291,7 +255,7 @@ viewMenu model =
 updateConfig : Autocomplete.UpdateConfig Msg Place
 updateConfig =
     Autocomplete.updateConfig
-        { toId = .description
+        { toId = .placeId
         , onKeyDown =
             \code maybeId ->
                 if code == 38 || code == 40 then
@@ -304,7 +268,7 @@ updateConfig =
         , onTooHigh = Just <| Wrap True
         , onMouseEnter = \id -> Just <| PreviewPlace id
         , onMouseLeave = \_ -> Nothing
-        , onMouseClick = \id -> Just <| SelectPlaceMouse id
+        , onMouseClick = \id -> Just <| SelectPlaceMouse (Debug.log "selectedId" id)
         , separateSelections = False
         }
 
@@ -315,13 +279,13 @@ viewConfig =
         customizedLi keySelected mouseSelected place =
             { attributes =
                 [ classList [ ( "autocomplete-item", True ), ( "key-selected", keySelected || mouseSelected ) ]
-                , id place.description
+                , id place.placeId
                 ]
             , children = [ Html.text place.description ]
             }
     in
         Autocomplete.viewConfig
-            { toId = .description
+            { toId = .placeId
             , ul = [ class "autocomplete-list" ]
             , li = customizedLi
             }

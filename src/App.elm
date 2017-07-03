@@ -1,4 +1,4 @@
-module App exposing (Model, Msg, update, view, subscriptions, init)
+port module App exposing (Model, Msg, update, view, subscriptions, init)
 
 import Array exposing (..)
 import CitySelector
@@ -34,8 +34,8 @@ type Msg
     = StartTimeChanged Float
     | DurationChanged Float
     | AddParticipant
-    | CitySelected CitySelector.Msg
     | ParticipantMsg Participant.Msg Int
+    | SetPlacesSuggestions (Int, List Place)
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
@@ -53,7 +53,26 @@ update msg model =
         ParticipantMsg subMsg index ->
             case subMsg of
                 Participant.Remove ->
-                    ( { model | participants = Array.append (Array.slice 0 index model.participants) (Array.slice (index + 1) (Array.length model.participants) model.participants) }, Cmd.none )
+                    ( { model | participants = Array.append (Array.slice 0 (Debug.log "part sug ind" index) model.participants) (Array.slice (index + 1) (Array.length model.participants) model.participants) }, Cmd.none )
+
+                Participant.CityMsg citySubMsg ->
+                    case citySubMsg of
+                        CitySelector.SetQuery query ->
+                            let
+                                ( updatedParticipant, _ ) =
+                                    Participant.update subMsg (Maybe.withDefault Participant.init (Array.get index model.participants))
+                            in
+                                { model | participants = Array.set index updatedParticipant model.participants } ! [ getPlacesSuggestions (index, query) ]
+
+                        _ ->
+                            let
+                                ( updatedParticipant, _ ) =
+                                    Participant.update subMsg (Maybe.withDefault Participant.init (Array.get index model.participants))
+                            in
+                                ( { model | participants = Array.set index updatedParticipant model.participants }
+                                , Cmd.none
+                                )
+
 
                 _ ->
                     let
@@ -63,17 +82,20 @@ update msg model =
                         ( { model | participants = Array.set index updatedParticipant model.participants }
                         , Cmd.none
                         )
-        CitySelected subMsg ->
+
+        SetPlacesSuggestions (index, suggestions) ->
             let
-                ( updateModel, updateCmd ) = CitySelector.update subMsg model.city
+                ( updatedParticipant, _ ) =
+                    Participant.update (Participant.SetPlaceCitySuggestions <| List.map (\suggestion -> CitySelector.Place suggestion.description suggestion.place_id) suggestions) (Maybe.withDefault Participant.init (Array.get index model.participants))
+
             in
-                ( { model | city = updateModel }, Cmd.map CitySelected updateCmd )
+                { model | participants = Array.set index updatedParticipant model.participants} ! []
+
 
 view : Model -> Html Msg
 view model =
     div [ class "app" ]
         [ Header.view
-        , Html.map CitySelected (CitySelector.view model.city)
         , div [ class "app__participants" ]
             ((button
                 [ class "app__add-participant"
@@ -88,14 +110,17 @@ view model =
         , MeetingTimeSelector.view model.startTime (\value -> StartTimeChanged value) model.duration (\value -> DurationChanged value)
         ]
 
+type alias Place = {
+    description: String,
+    place_id: String
+}
+
+port getPlacesSuggestions : (Int, String) -> Cmd msg
+port setPlacesSuggestions : ((Int, List Place) -> msg) -> Sub msg
 
 subscriptions : Model -> Sub Msg
 subscriptions model =
-    Sub.none
-
-type alias Flags = {
-    token: String
-}
+    setPlacesSuggestions SetPlacesSuggestions
 
 init : ( Model, Cmd Msg )
 init =
