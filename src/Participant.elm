@@ -19,7 +19,6 @@ type Msg
     | ToggleManual
     | CityMsg CitySelector.Msg
     | GetPlaceCitySuggestions String
-    | SetPlaceCitySuggestions (List CitySelector.Place)
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
@@ -37,20 +36,13 @@ update msg model =
         GetPlaceCitySuggestions query ->
             ( Debug.log "city model" model, Cmd.none )
 
-        SetPlaceCitySuggestions suggestions ->
-            let
-                city = model.city
-                updatedCity = { city | places = suggestions }
-            in
-                { model | city = updatedCity } ! []
-
         CityMsg subMsg ->
             case subMsg of
-                CitySelector.SetQuery query ->
+                CitySelector.GotTimezone shift ->
                     let
                         ( updatedModel, updateCmd ) = CitySelector.update subMsg model.city
                     in
-                        { model | city = updatedModel } ! []
+                        ( { model | city = updatedModel, timeZone = shift }, Cmd.map CityMsg updateCmd )
                 _ ->
                     let
                         ( updatedModel, updateCmd ) = CitySelector.update subMsg model.city

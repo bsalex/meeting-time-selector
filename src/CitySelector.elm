@@ -1,12 +1,15 @@
 module CitySelector exposing (..)
 
 import Autocomplete
+import Dom
 import Html exposing (..)
 import Html.Attributes exposing (..)
 import Html.Events exposing (..)
 import Json.Decode as Decode
-import Dom
 import Task
+import Debounce
+import TeleportCitiesSuggestions exposing (Suggestion)
+import TeleportCityTimeZoneResolver exposing (..)
 
 
 type alias Model =
@@ -16,6 +19,8 @@ type alias Model =
     , query : String
     , selectedPlace : Maybe Place
     , showMenu : Bool
+    , d : Debounce.State
+    , timezone : Int
     }
 
 
@@ -33,6 +38,8 @@ init =
     , query = ""
     , selectedPlace = Nothing
     , showMenu = False
+    , d = Debounce.init
+    , timezone = 0
     }
 
 
@@ -45,9 +52,34 @@ type Msg
     | SelectPlaceKeyboard String
     | SelectPlaceMouse String
     | PreviewPlace String
+    | GotSuggestions (List TeleportCitiesSuggestions.Suggestion)
     | OnFocus
+    | Deb (Debounce.Msg Msg)
+    | GetSuggestions
+    | GotTimezone Int
     | NoOp
 
+
+getSuggestions : String -> Cmd Msg
+getSuggestions query = TeleportCitiesSuggestions.suggest GotSuggestions query
+
+getTimezone : String -> Cmd Msg
+getTimezone query = TeleportCityTimeZoneResolver.resolveTimeZone GotTimezone query
+
+deb1 : (a -> Msg) -> (a -> Msg)
+deb1 = Debounce.debounce1 cfg
+
+debCmd : Msg -> Cmd Msg
+debCmd =
+    Debounce.debounceCmd cfg
+
+cfg : Debounce.Config Model Msg
+cfg =
+    Debounce.config
+        .d                               -- getState   : Model -> Debounce.State
+        (\model s -> { model | d = s })  -- setState   : Debounce.State -> Model -> Debounce.State
+        Deb                              -- msgWrapper : Msg a -> Msg
+        500                              -- timeout ms : Float
 
 update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
@@ -57,7 +89,20 @@ update msg model =
                 showMenu =
                     not << List.isEmpty <| (acceptablePlaces newQuery model.places)
             in
-                { model | query = newQuery, showMenu = True, selectedPlace = Nothing } ! []
+                { model | query = newQuery, showMenu = True, selectedPlace = Nothing }
+                ![ debCmd <| GetSuggestions ]
+
+        GetSuggestions ->
+            model ! [ getSuggestions model.query ]
+
+        Deb a ->
+            Debounce.update cfg a model
+
+        GotSuggestions suggestions ->
+            ({ model | places = List.map (\suggestion -> Place suggestion.name suggestion.id) suggestions }, Cmd.none)
+
+        GotTimezone shift ->
+            ({ model | timezone = shift }, Cmd.none)
 
         SetAutoState autoMsg ->
             let
@@ -130,7 +175,7 @@ update msg model =
                     setQuery model id
                         |> resetMenu
             in
-                newModel ! []
+                newModel ! [ getTimezone id ]
 
         SelectPlaceMouse id ->
             let
@@ -138,7 +183,7 @@ update msg model =
                     setQuery model id
                         |> resetMenu
             in
-                ( newModel, Task.attempt (\_ -> NoOp) (Dom.focus "president-input") )
+                newModel ! [ Task.attempt (\_ -> NoOp) (Dom.focus "president-input"), getTimezone id ]
 
         PreviewPlace id ->
             { model | selectedPlace = Just <| getPlaceAtId model.places id } ! []
