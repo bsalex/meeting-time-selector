@@ -1,11 +1,10 @@
 module Header exposing (..)
 
 import Html exposing (..)
-import Html.Attributes exposing (..)
 
 
-view : Html msg
-view =
-    div [ class "app__header" ]
-        [ text "Time picker for meetings in different time zones"
+view : List (Html.Attribute msg) -> Html msg
+view attributes =
+    div (List.concat [ [ ], attributes ])
+        [ h1 [] [ text "Time picker for meetings in different time zones" ]
         ]

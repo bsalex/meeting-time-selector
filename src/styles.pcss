@@ -1,13 +1,28 @@
+@import url('../node_modules/normalize.css/normalize.css');
+@import url('../node_modules/roboto-fontface/css/roboto/roboto-fontface.css');
+
+body {
+    font-size: 16px;
+    font-family: Roboto, sans-serif;
+}
+
 body * {
     box-sizing: border-box;
 }
 
 .app {
+    width: 1240px;
+    margin: 0 auto;
+
+    &__component + &__component {
+        margin-top: 15px;
+    }
 }
 
 .app__header {
-    background-color: #2af;
+    background-color: #2196F3;
     color: #fff;
+    padding: 20px;
 }
 
 .app__timelines {
@@ -42,11 +57,11 @@ body * {
 }
 
 .timeline__item--good {
-    background-color: #79d679;
+    background-color: #81C784;
 }
 
 .timeline__item--bad {
-    background-color: #ff6161;
+    background-color: #E57373;
 }
 
 .timeline__item::before {

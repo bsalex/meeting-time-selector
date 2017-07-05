@@ -5,9 +5,9 @@ import Html.Attributes exposing (..)
 import Html.Events exposing (..)
 
 
-view : Float -> (Float -> msg) -> Float -> (Float -> msg) -> Html msg
-view start onStartChanged duration onDurationChanged =
-    div []
+view : List (Html.Attribute msg) -> Float -> (Float -> msg) -> Float -> (Float -> msg) -> Html msg
+view attributes start onStartChanged duration onDurationChanged =
+    div (List.concat [ [], attributes ])
         [ span [] [ text "Start time" ]
         , input
             [ type_ "number"

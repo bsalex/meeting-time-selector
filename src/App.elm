@@ -67,8 +67,8 @@ update msg model =
 view : Model -> Html Msg
 view model =
     div [ class "app" ]
-        [ Header.view
-        , div [ class "app__participants" ]
+        [ Header.view [ class "app__header app__component" ]
+        , div [ class "app__participants app__component" ]
             ((button
                 [ class "app__add-participant"
                 , onClick AddParticipant
@@ -77,9 +77,9 @@ view model =
              )
                 :: (Array.indexedMap (\index participant -> (Participant.view participant |> Html.map (ParticipantMsg index))) model.participants |> Array.toList)
             )
-        , div [ class "app__timelines" ]
+        , div [ class "app__timelines app__component" ]
             ((MeetingIndicator.view model.startTime model.duration) :: (Array.map (\participant -> ParticipantTimeline.view participant model.startTime model.duration ) model.participants |> Array.toList))
-        , MeetingTimeSelector.view model.startTime (\value -> StartTimeChanged value) model.duration (\value -> DurationChanged value)
+        , MeetingTimeSelector.view [ class "app__meeting app__component" ] model.startTime (\value -> StartTimeChanged value) model.duration (\value -> DurationChanged value)
         ]
 
 type alias Place = {
@@ -93,4 +93,4 @@ subscriptions model =
 
 init : ( Model, Cmd Msg )
 init =
-    ( Model (Array.fromList [ Participant.init, Participant.init, Participant.init ]) 17.75 0.5 CitySelector.init, Cmd.none )
+    ( Model (Array.fromList [ Participant.init, Participant.init, Participant.init ]) 17.0 0.5 CitySelector.init, Cmd.none )
