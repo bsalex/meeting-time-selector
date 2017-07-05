@@ -183,7 +183,7 @@ update msg model =
                     setQuery model id
                         |> resetMenu
             in
-                newModel ! [ Task.attempt (\_ -> NoOp) (Dom.focus "president-input"), getTimezone id ]
+                newModel ! [ Task.attempt (\_ -> NoOp) (Dom.focus "city-input"), getTimezone id ]
 
         PreviewPlace id ->
             { model | selectedPlace = Just <| getPlaceAtId model.places id } ! []
@@ -269,14 +269,14 @@ view model =
                 Nothing ->
                     model.query
     in
-        div []
+        div [ class "city-selector" ]
             (List.append
                 [ input
                     [ onInput SetQuery
                     , onFocus OnFocus
                     , onWithOptions "keydown" options dec
                     , value query
-                    , id "president-input"
+                    , id "city-input"
                     , class "autocomplete-input"
                     , autocomplete False
                     ]
