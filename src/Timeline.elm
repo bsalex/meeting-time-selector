@@ -7,7 +7,7 @@ import ListRotate
 
 view : Int -> List Int -> List (Html.Attribute msg) -> Html msg
 view shift goodHours attributes =
-    div (List.concat [ [ class "timeline" ], attributes ])
+    div ([ class "timeline" ] ++ attributes)
         (List.map
             (\number ->
                 div

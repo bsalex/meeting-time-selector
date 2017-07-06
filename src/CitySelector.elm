@@ -203,22 +203,26 @@ update msg model =
             model ! []
 
 
+resetInput : Model -> Model
 resetInput model =
     { model | query = "" }
         |> removeSelection
         |> resetMenu
 
 
+removeSelection : Model -> Model
 removeSelection model =
     { model | selectedPlace = Nothing }
 
 
+getPlaceAtId : List Place -> String -> Place
 getPlaceAtId places id =
     List.filter (\place -> place.placeId == id) places
         |> List.head
         |> Maybe.withDefault (Place "Not Found" "")
 
 
+setQuery : Model -> String -> Model
 setQuery model id =
     { model
         | query = .description <| getPlaceAtId model.places id
@@ -226,6 +230,7 @@ setQuery model id =
     }
 
 
+resetMenu : Model -> Model
 resetMenu model =
     { model
         | autoState = Autocomplete.empty

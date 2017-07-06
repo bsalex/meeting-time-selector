@@ -8,6 +8,6 @@ rotate shift list =
             rem shift <| List.length list
     in
         if shift >= 0 then
-            List.concat [ List.drop normalizedshift list, List.take normalizedshift list ]
+            List.drop normalizedshift list ++ List.take normalizedshift list
         else
-            List.concat [ List.drop (List.length list + normalizedshift) list, List.take (List.length list + normalizedshift) list ]
+            List.drop (List.length list + normalizedshift) list ++ List.take (List.length list + normalizedshift) list

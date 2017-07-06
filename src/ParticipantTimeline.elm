@@ -2,7 +2,6 @@ module ParticipantTimeline exposing (..)
 
 import Html exposing (..)
 import Html.Attributes exposing (..)
-import Debug
 import Timeline
 import Participant
 
