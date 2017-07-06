@@ -5,11 +5,12 @@ import Html exposing (..)
 import Html.Attributes exposing (..)
 import Html.Events exposing (..)
 
+
 type alias Model =
     { timeZone : Int
     , goodHours : List Int
     , isManual : Bool
-    , city: CitySelector.Model
+    , city : CitySelector.Model
     }
 
 
@@ -40,12 +41,15 @@ update msg model =
             case subMsg of
                 CitySelector.GotTimezone shift ->
                     let
-                        ( updatedModel, updateCmd ) = CitySelector.update subMsg model.city
+                        ( updatedModel, updateCmd ) =
+                            CitySelector.update subMsg model.city
                     in
                         ( { model | city = updatedModel, timeZone = shift }, Cmd.map CityMsg updateCmd )
+
                 _ ->
                     let
-                        ( updatedModel, updateCmd ) = CitySelector.update subMsg model.city
+                        ( updatedModel, updateCmd ) =
+                            CitySelector.update subMsg model.city
                     in
                         ( { model | city = updatedModel }, Cmd.map CityMsg updateCmd )
 
@@ -63,7 +67,7 @@ getInput model =
             ]
             []
     else
-        Html.map CityMsg ( CitySelector.view model.city )
+        Html.map CityMsg (CitySelector.view model.city)
 
 
 view : Model -> Html Msg

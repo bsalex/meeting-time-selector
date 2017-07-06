@@ -23,7 +23,8 @@ matchesGoodTime participant startTime duration =
                 |> (+) 1
                 |> toFloat
 
-        startMeeging = startTime
+        startMeeging =
+            startTime
 
         endMeeting =
             startTime + duration

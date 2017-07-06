@@ -61,25 +61,33 @@ type Msg
 
 
 getSuggestions : String -> Cmd Msg
-getSuggestions query = TeleportCitiesSuggestions.suggest GotSuggestions query
+getSuggestions query =
+    TeleportCitiesSuggestions.suggest GotSuggestions query
+
 
 getTimezone : String -> Cmd Msg
-getTimezone query = TeleportCityTimeZoneResolver.resolveTimeZone GotTimezone query
+getTimezone query =
+    TeleportCityTimeZoneResolver.resolveTimeZone GotTimezone query
+
 
 deb1 : (a -> Msg) -> (a -> Msg)
-deb1 = Debounce.debounce1 cfg
+deb1 =
+    Debounce.debounce1 cfg
+
 
 debCmd : Msg -> Cmd Msg
 debCmd =
     Debounce.debounceCmd cfg
 
+
 cfg : Debounce.Config Model Msg
 cfg =
     Debounce.config
-        .d                               -- getState   : Model -> Debounce.State
-        (\model s -> { model | d = s })  -- setState   : Debounce.State -> Model -> Debounce.State
-        Deb                              -- msgWrapper : Msg a -> Msg
-        500                              -- timeout ms : Float
+        .d
+        (\model s -> { model | d = s })
+        Deb
+        500
+
 
 update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
@@ -90,7 +98,7 @@ update msg model =
                     not << List.isEmpty <| (acceptablePlaces newQuery model.places)
             in
                 { model | query = newQuery, showMenu = True, selectedPlace = Nothing }
-                ![ debCmd <| GetSuggestions ]
+                    ! [ debCmd <| GetSuggestions ]
 
         GetSuggestions ->
             model ! [ getSuggestions model.query ]
@@ -99,10 +107,10 @@ update msg model =
             Debounce.update cfg a model
 
         GotSuggestions suggestions ->
-            ({ model | places = List.map (\suggestion -> Place suggestion.name suggestion.id) suggestions }, Cmd.none)
+            ( { model | places = List.map (\suggestion -> Place suggestion.name suggestion.id) suggestions }, Cmd.none )
 
         GotTimezone shift ->
-            ({ model | timezone = shift }, Cmd.none)
+            ( { model | timezone = shift }, Cmd.none )
 
         SetAutoState autoMsg ->
             let

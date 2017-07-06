@@ -78,18 +78,21 @@ view model =
                 :: (Array.indexedMap (\index participant -> (Participant.view participant |> Html.map (ParticipantMsg index))) model.participants |> Array.toList)
             )
         , div [ class "app__timelines app__component" ]
-            ((MeetingIndicator.view model.startTime model.duration) :: (Array.map (\participant -> ParticipantTimeline.view participant model.startTime model.duration ) model.participants |> Array.toList))
+            ((MeetingIndicator.view model.startTime model.duration) :: (Array.map (\participant -> ParticipantTimeline.view participant model.startTime model.duration) model.participants |> Array.toList))
         , MeetingTimeSelector.view [ class "app__meeting app__component" ] model.startTime (\value -> StartTimeChanged value) model.duration (\value -> DurationChanged value)
         ]
 
-type alias Place = {
-    description: String,
-    place_id: String
-}
+
+type alias Place =
+    { description : String
+    , place_id : String
+    }
+
 
 subscriptions : Model -> Sub Msg
 subscriptions model =
     Sub.none
+
 
 init : ( Model, Cmd Msg )
 init =
