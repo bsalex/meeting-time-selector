@@ -11,7 +11,6 @@ import MeetingTimeSelector
 import Participant
 import ParticipantTimeline
 
-
 main : Program Never Model Msg
 main =
     Html.program

@@ -4,6 +4,7 @@ import CitySelector
 import Html exposing (..)
 import Html.Attributes exposing (..)
 import Html.Events exposing (..)
+import App.NumberInput
 
 
 type alias Model =
@@ -57,6 +58,7 @@ update msg model =
 getInput : Model -> Html Msg
 getInput model =
     if model.isManual then
+        App.NumberInput.view
         input
             [ value (toString model.timeZone)
             , class "participant__timezone"
