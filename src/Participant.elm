@@ -12,14 +12,17 @@ type alias Model =
     , goodHours : List Int
     , isManual : Bool
     , city : CitySelector.Model
+    , numberInput : App.NumberInput.Model Msg
     }
 
 
 type Msg
     = ChangeTimeZone String
+    | ChangeTimeZoneInt Int
     | Remove
     | ToggleManual
     | CityMsg CitySelector.Msg
+    | NumberInputMsg (App.NumberInput.Msg Msg)
     | GetPlaceCitySuggestions String
 
 
@@ -32,11 +35,21 @@ update msg model =
         ChangeTimeZone newTimeZone ->
             ( { model | timeZone = (Result.withDefault 0 (String.toInt newTimeZone)) }, Cmd.none )
 
+        ChangeTimeZoneInt newTimeZone ->
+            ( { model | timeZone = newTimeZone }, Cmd.none )
+
         ToggleManual ->
             { model | isManual = not model.isManual } ! []
 
         GetPlaceCitySuggestions query ->
             ( Debug.log "city model" model, Cmd.none )
+
+        NumberInputMsg subMsg ->
+            let
+                ( updatedModel, updateCmd ) =
+                    App.NumberInput.update subMsg model.numberInput
+            in
+                ( { model | numberInput = updatedModel }, Cmd.map NumberInputMsg updateCmd )
 
         CityMsg subMsg ->
             case subMsg of
@@ -58,16 +71,7 @@ update msg model =
 getInput : Model -> Html Msg
 getInput model =
     if model.isManual then
-        App.NumberInput.view
-        input
-            [ value (toString model.timeZone)
-            , class "participant__timezone"
-            , type_ "number"
-            , onInput ChangeTimeZone
-            , Html.Attributes.max "12"
-            , Html.Attributes.min "-12"
-            ]
-            []
+        Html.map NumberInputMsg (App.NumberInput.view model.timeZone 1 ChangeTimeZoneInt)
     else
         Html.map CityMsg (CitySelector.view model.city)
 
@@ -91,4 +95,4 @@ view model =
 
 init : Model
 init =
-    Model 0 (List.range 9 17) False CitySelector.init
+    Model 0 (List.range 9 17) False CitySelector.init App.NumberInput.init

@@ -1,4 +1,5 @@
 module App.NumberInput exposing (..)
+
 import Html exposing (..)
 import Html.Attributes exposing (..)
 import Html.Events exposing (..)
@@ -7,80 +8,71 @@ import Task
 import Time
 
 
-type Msg
-    = StartRepeat Msg
-    | EndRepeat
+type Msg msg = EndRepeat | Do msg | StartRepeat msg
 
 
-type alias Model =
-    { inputSub : Sub Msg }
+type alias Model msg =
+    { inputSub : Sub msg }
 
 
-update : Msg -> Model -> ( Model, Cmd Msg )
+update : Msg msg -> Model msg -> ( Model msg, Cmd (Msg msg) )
 update msg model =
     case msg of
-        StartRepeat msg ->
-            let
-                ( updatedModel, _ ) =
-                    update msg model
-            in
-                { updatedModel | inputSub = (Time.every (Time.millisecond * 200) (\_ -> msg)) model.inputSub } ! []
+        StartRepeat payloadMsg ->
+            { model | inputSub = (Time.every (Time.millisecond * 200) (\_ -> payloadMsg)) } ! []
 
         EndRepeat ->
             { model | inputSub = Sub.none } ! []
 
+        Do payloadMsg ->
+            model ! [ Task.perform (\_ -> msg) (Task.succeed ()) ]
 
-wheelEventToMessage : msg -> msg -> Json.Decoder msg
+
+wheelEventToMessage : msg -> msg -> Json.Decoder (Msg msg)
 wheelEventToMessage onInc onDec =
     Json.map
         (\delta ->
             if delta > 0 then
-                onDec
+                Do onDec
             else
-                onInc
+                Do onInc
         )
         (Json.field "deltaY" Json.int)
 
-getOnInc : number -> number -> (number -> msg) -> msg
-getOnInc value step onChange =
-    onChange (value + step)
-
-getOnDec : number -> number -> (number -> msg) -> msg
-getOnDec value step onChange =
-    onChange (value - step)
-
-view : number -> number -> (number -> msg) -> Html msg
+view : number -> number -> (number -> msg) -> Html (Msg msg)
 view currentValue step onChange =
     let
         onInc =
-            getOnInc currentValue step onChange
+            onChange (currentValue + step)
 
         onDec =
-            getOnDec currentValue step onChange
+            onChange (currentValue - step)
     in
-
-
-    span []
-        [ input [ value (toString currentValue), type_ "number"
+        span []
+            [ input
+                [ value (toString currentValue)
+                , type_ "number"
                 , on "wheel" (wheelEventToMessage onInc onDec)
-                ] []
-        , button
-            [ onMouseDown (StartRepeat onInc)
-            , onMouseUp (EndRepeat)
+                ]
+                []
+            , button
+                [ onMouseDown (StartRepeat onInc)
+                , onMouseUp EndRepeat
+                ]
+                [ text "+" ]
+            , button
+                [ onMouseDown (StartRepeat onDec)
+                , onMouseUp EndRepeat
+                ]
+                [ text "-" ]
             ]
-            [ text "+" ]
-        , button
-            [ onMouseDown (StartRepeat onDec)
-            , onMouseUp (EndRepeat)
-            ]
-            [ text "-" ]
-        ]
 
 
-init : ( Model, Cmd Msg )
+init : Model msg
 init =
-    { inputSub = Sub.none } ! []
+    { inputSub = Sub.none }
 
 
-subscription : Model -> Sub Msg
-subscription model = model.inputSub
+subscription : Model msg -> Sub msg
+subscription model =
+    model.inputSub
