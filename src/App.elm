@@ -56,7 +56,7 @@ update msg model =
                 _ ->
                     let
                         ( updatedParticipant, updateCmd ) =
-                            Participant.update subMsg (Maybe.withDefault Participant.init (Array.get index model.participants))
+                            Participant.update (Debug.log "subMsg" subMsg) (Maybe.withDefault Participant.init (Array.get index model.participants))
                     in
                         ( { model | participants = Array.set index updatedParticipant model.participants }
                         , Cmd.map (ParticipantMsg index) updateCmd
@@ -90,7 +90,11 @@ type alias Place =
 
 subscriptions : Model -> Sub Msg
 subscriptions model =
-    Sub.none
+    Sub.batch (
+        Array.indexedMap (
+            \index p -> Sub.map (\p1 -> ParticipantMsg index p1) (Participant.subsctiption p)
+        ) model.participants |> Array.toList
+    )
 
 
 init : ( Model, Cmd Msg )

@@ -19,6 +19,7 @@ type alias Model =
 type Msg
     = ChangeTimeZone String
     | ChangeTimeZoneInt Int
+    | ShiftTimeZoneInt Int
     | Remove
     | ToggleManual
     | CityMsg CitySelector.Msg
@@ -36,7 +37,10 @@ update msg model =
             ( { model | timeZone = (Result.withDefault 0 (String.toInt newTimeZone)) }, Cmd.none )
 
         ChangeTimeZoneInt newTimeZone ->
-            ( { model | timeZone = newTimeZone }, Cmd.none )
+            ( { model | timeZone = Debug.log "newTimeZone" newTimeZone }, Cmd.none )
+
+        ShiftTimeZoneInt shift ->
+            ( { model | timeZone = model.timeZone + shift }, Cmd.none )
 
         ToggleManual ->
             { model | isManual = not model.isManual } ! []
@@ -49,7 +53,7 @@ update msg model =
                 ( updatedModel, updateCmd ) =
                     App.NumberInput.update subMsg model.numberInput
             in
-                ( { model | numberInput = updatedModel }, Cmd.map NumberInputMsg updateCmd )
+                ( { model | numberInput = updatedModel }, updateCmd )
 
         CityMsg subMsg ->
             case subMsg of
@@ -71,7 +75,7 @@ update msg model =
 getInput : Model -> Html Msg
 getInput model =
     if model.isManual then
-        Html.map NumberInputMsg (App.NumberInput.view model.timeZone 1 ChangeTimeZoneInt)
+        Html.map NumberInputMsg (App.NumberInput.view (toFloat model.timeZone) 1 (\f -> ChangeTimeZoneInt (floor f)) (\f -> ShiftTimeZoneInt (floor f)))
     else
         Html.map CityMsg (CitySelector.view model.city)
 
@@ -96,3 +100,7 @@ view model =
 init : Model
 init =
     Model 0 (List.range 9 17) False CitySelector.init App.NumberInput.init
+
+
+subsctiption : Model -> Sub Msg
+subsctiption model = model.numberInput.inputSub
