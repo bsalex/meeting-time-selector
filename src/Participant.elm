@@ -18,8 +18,7 @@ type alias Model =
 
 type Msg
     = ChangeTimeZone String
-    | ChangeTimeZoneInt Int
-    | ShiftTimeZoneInt Int
+    | ShiftTimeZone Int
     | Remove
     | ToggleManual
     | CityMsg CitySelector.Msg
@@ -36,10 +35,7 @@ update msg model =
         ChangeTimeZone newTimeZone ->
             ( { model | timeZone = (Result.withDefault 0 (String.toInt newTimeZone)) }, Cmd.none )
 
-        ChangeTimeZoneInt newTimeZone ->
-            ( { model | timeZone = Debug.log "newTimeZone" newTimeZone }, Cmd.none )
-
-        ShiftTimeZoneInt shift ->
+        ShiftTimeZone shift ->
             ( { model | timeZone = model.timeZone + shift }, Cmd.none )
 
         ToggleManual ->
@@ -75,7 +71,7 @@ update msg model =
 getInput : Model -> Html Msg
 getInput model =
     if model.isManual then
-        Html.map NumberInputMsg (App.NumberInput.view (toFloat model.timeZone) 1 (\f -> ChangeTimeZoneInt (floor f)) (\f -> ShiftTimeZoneInt (floor f)))
+        Html.map NumberInputMsg (App.NumberInput.view (toFloat model.timeZone) 1 (floor >> ShiftTimeZone))
     else
         Html.map CityMsg (CitySelector.view model.city)
 

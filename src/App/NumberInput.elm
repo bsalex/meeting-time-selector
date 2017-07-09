@@ -42,30 +42,30 @@ wheelEventToMessage onInc onDec =
         )
         (Json.field "deltaY" Json.int)
 
-view : Float -> Float -> (Float -> msg) -> (Float -> msg) -> Html (Msg msg)
-view currentValue step onChange onShift =
+view : Float -> Float -> (Float -> msg) -> Html (Msg msg)
+view currentValue step onShift =
     let
         onInc =
-            onChange (Debug.log "222" currentValue + step)
+            onShift step
 
         onDec =
-            onChange (currentValue - step)
+            onShift -step
     in
         span []
             [ input
                 [ value (toString currentValue)
                 , type_ "number"
                 , on "wheel" (wheelEventToMessage (Do onInc) (Do onDec))
-                , onInput (\s -> Do (onChange (Result.withDefault currentValue (String.toFloat s))))
+                , onInput (\s -> Do (onShift ((Result.withDefault 0 (String.toFloat s)) - currentValue)))
                 ]
                 []
             , button
-                [ onMouseDown (StartRepeat (onShift 1))
+                [ onMouseDown (StartRepeat onInc)
                 , onMouseUp EndRepeat
                 ]
                 [ text "+" ]
             , button
-                [ onMouseDown (StartRepeat (onShift -1))
+                [ onMouseDown (StartRepeat onDec)
                 , onMouseUp EndRepeat
                 ]
                 [ text "-" ]
