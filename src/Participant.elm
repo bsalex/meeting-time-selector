@@ -71,7 +71,7 @@ update msg model =
 getInput : Model -> Html Msg
 getInput model =
     if model.isManual then
-        Html.map NumberInputMsg (App.NumberInput.view (toFloat model.timeZone) 1 (floor >> ShiftTimeZone))
+        Html.map NumberInputMsg (App.NumberInput.view model.numberInput (toFloat model.timeZone) 1 (floor >> ShiftTimeZone))
     else
         Html.map CityMsg (CitySelector.view model.city)
 

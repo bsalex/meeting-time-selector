@@ -8,11 +8,17 @@ import Task
 import Time
 
 
-type Msg msg = EndRepeat | Do msg | StartRepeat msg
+type Msg msg
+    = EndRepeat
+    | Do msg
+    | StartRepeat msg
+    | SetOverrideValue String
 
 
 type alias Model msg =
-    { inputSub : Sub msg }
+    { inputSub : Sub msg
+    , overrideValue : String
+    }
 
 
 update : Msg msg -> Model msg -> ( Model msg, Cmd msg )
@@ -20,7 +26,8 @@ update msg model =
     case msg of
         StartRepeat payloadMsg ->
             let
-                (updatedModel, updateCmd) = update (Do payloadMsg) model
+                ( updatedModel, updateCmd ) =
+                    update (Do payloadMsg) model
             in
                 { updatedModel | inputSub = (Time.every (Time.millisecond * 200) (\_ -> Debug.log "payload" payloadMsg)) } ! [ updateCmd ]
 
@@ -28,7 +35,10 @@ update msg model =
             { model | inputSub = Sub.none } ! []
 
         Do payloadMsg ->
-            model ! [ Task.perform identity (Task.succeed payloadMsg) ]
+            { model | overrideValue = "" } ! [ Task.perform identity (Task.succeed payloadMsg) ]
+
+        SetOverrideValue value ->
+            { model | overrideValue = value } ! []
 
 
 wheelEventToMessage : msg -> msg -> Json.Decoder msg
@@ -42,8 +52,48 @@ wheelEventToMessage onInc onDec =
         )
         (Json.field "deltaY" Json.int)
 
-view : Float -> Float -> (Float -> msg) -> Html (Msg msg)
-view currentValue step onShift =
+
+inputKeyCodeToMsg : msg -> msg -> Json.Decoder msg
+inputKeyCodeToMsg onInc onDec =
+    ((Json.map
+        (\code ->
+            if code == 38 then
+                Ok onInc
+            else if code == 40 then
+                Ok onDec
+            else
+                Err "not handling that key"
+        )
+        keyCode
+     )
+        |> Json.andThen
+            (\result ->
+                case result of
+                    Ok val ->
+                        Json.succeed val
+
+                    Err reason ->
+                        Json.fail reason
+            )
+    )
+
+
+inputChangeToMsg : (Float -> Msg msg) -> Float -> String -> Msg msg
+inputChangeToMsg onShift currentValue stringValue =
+    if (stringValue == "-" || stringValue == "+") then
+        SetOverrideValue stringValue
+    else if stringValue == "0-" then
+        SetOverrideValue "-"
+    else if stringValue == "0+" then
+        SetOverrideValue "+"
+    else if stringValue == "" then
+        onShift -currentValue
+    else
+        onShift ((Result.withDefault currentValue (String.toFloat stringValue)) - currentValue)
+
+
+view : Model msg -> Float -> Float -> (Float -> msg) -> Html (Msg msg)
+view model currentValue step onShift =
     let
         onInc =
             onShift step
@@ -53,10 +103,17 @@ view currentValue step onShift =
     in
         span []
             [ input
-                [ value (toString currentValue)
-                , type_ "number"
+                [ value
+                    (if model.overrideValue /= "" then
+                        model.overrideValue
+                     else
+                        (toString currentValue)
+                    )
                 , on "wheel" (wheelEventToMessage (Do onInc) (Do onDec))
-                , onInput (\s -> Do (onShift ((Result.withDefault 0 (String.toFloat s)) - currentValue)))
+                , onWithOptions "keydown"
+                    { preventDefault = True, stopPropagation = False }
+                    (inputKeyCodeToMsg (Do onInc) (Do onDec))
+                , onInput (inputChangeToMsg (\v -> Do (onShift v)) currentValue)
                 ]
                 []
             , button
@@ -74,7 +131,7 @@ view currentValue step onShift =
 
 init : Model msg
 init =
-    { inputSub = Sub.none }
+    { inputSub = Sub.none, overrideValue = "" }
 
 
 subscription : Model msg -> Sub msg
