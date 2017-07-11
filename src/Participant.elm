@@ -17,39 +17,31 @@ type alias Model =
 
 
 type Msg
-    = ChangeTimeZone String
-    | ShiftTimeZone Int
+    = ShiftTimeZone Int
     | Remove
     | ToggleManual
     | CityMsg CitySelector.Msg
     | NumberInputMsg (App.NumberInput.Msg Msg)
-    | GetPlaceCitySuggestions String
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
     case msg of
         Remove ->
-            ( model, Cmd.none )
-
-        ChangeTimeZone newTimeZone ->
-            ( { model | timeZone = (Result.withDefault 0 (String.toInt newTimeZone)) }, Cmd.none )
+            model ! []
 
         ShiftTimeZone shift ->
-            ( { model | timeZone = model.timeZone + shift }, Cmd.none )
+            { model | timeZone = model.timeZone + shift } ! []
 
         ToggleManual ->
             { model | isManual = not model.isManual } ! []
-
-        GetPlaceCitySuggestions query ->
-            ( Debug.log "city model" model, Cmd.none )
 
         NumberInputMsg subMsg ->
             let
                 ( updatedModel, updateCmd ) =
                     App.NumberInput.update subMsg model.numberInput
             in
-                ( { model | numberInput = updatedModel }, updateCmd )
+                { model | numberInput = updatedModel } ! [ updateCmd ]
 
         CityMsg subMsg ->
             case subMsg of
@@ -58,20 +50,20 @@ update msg model =
                         ( updatedModel, updateCmd ) =
                             CitySelector.update subMsg model.city
                     in
-                        ( { model | city = updatedModel, timeZone = shift }, Cmd.map CityMsg updateCmd )
+                        { model | city = updatedModel, timeZone = shift } ! [ Cmd.map CityMsg updateCmd ]
 
                 _ ->
                     let
                         ( updatedModel, updateCmd ) =
                             CitySelector.update subMsg model.city
                     in
-                        ( { model | city = updatedModel }, Cmd.map CityMsg updateCmd )
+                        { model | city = updatedModel } ! [ Cmd.map CityMsg updateCmd ]
 
 
 getInput : Model -> Html Msg
 getInput model =
     if model.isManual then
-        Html.map NumberInputMsg (App.NumberInput.view model.numberInput (toFloat model.timeZone) 1 (floor >> ShiftTimeZone))
+        Html.map NumberInputMsg (App.NumberInput.view model.numberInput (toFloat model.timeZone) 1 (ShiftTimeZone << floor))
     else
         Html.map CityMsg (CitySelector.view model.city)
 
@@ -99,4 +91,5 @@ init =
 
 
 subsctiption : Model -> Sub Msg
-subsctiption model = model.numberInput.inputSub
+subsctiption model =
+    model.numberInput.inputSub

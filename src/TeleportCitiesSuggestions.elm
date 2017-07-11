@@ -22,7 +22,8 @@ suggest resultToMessage query =
                 Err _ ->
                     resultToMessage []
         )
-        (Http.get (getSuggestionsUrl query) decodeSuggestions)
+    <|
+        Http.get (getSuggestionsUrl query) decodeSuggestions
 
 
 getSuggestionsUrl : String -> String
@@ -32,14 +33,12 @@ getSuggestionsUrl query =
 
 decodeSuggestions : Decode.Decoder (List Suggestion)
 decodeSuggestions =
-    Decode.at [ "_embedded", "city:search-results" ]
-        (Decode.list
-            (Decode.map2
+    Decode.at [ "_embedded", "city:search-results" ] <|
+        Decode.list <|
+            Decode.map2
                 Suggestion
-                (Decode.at [ "_links", "city:item" ] (Decode.field "href" (Decode.map extractCityIdFromUrl Decode.string)))
+                (Decode.at [ "_links", "city:item" ] <| Decode.field "href" <| Decode.map extractCityIdFromUrl Decode.string)
                 (Decode.field "matching_full_name" Decode.string)
-            )
-        )
 
 
 extractCityIdFromUrl : String -> String

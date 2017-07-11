@@ -23,9 +23,9 @@ view : List (Html.Attribute Msg) -> Model -> Html Msg
 view attributes model =
     div ([] ++ attributes)
         [ span [] [ text "Start time (UTC +0)" ]
-        , Html.map StartTimeNumberInputMsg (App.NumberInput.view model.startTimeInput model.startTime 0.25 ShiftStartTime)
+        , Html.map StartTimeNumberInputMsg <| App.NumberInput.view model.startTimeInput model.startTime 0.25 ShiftStartTime
         , span [] [ text "Duration" ]
-        , Html.map DurationNumberInputMsg (App.NumberInput.view model.durationInput model.duration 0.25 ShiftDuration)
+        , Html.map DurationNumberInputMsg <| App.NumberInput.view model.durationInput model.duration 0.25 ShiftDuration
         ]
 
 
@@ -43,14 +43,14 @@ update msg model =
                 ( updatedModel, updateCmd ) =
                     App.NumberInput.update subMsg model.startTimeInput
             in
-                ( { model | startTimeInput = updatedModel }, updateCmd )
+                { model | startTimeInput = updatedModel } ! [ updateCmd ]
 
         DurationNumberInputMsg subMsg ->
             let
                 ( updatedModel, updateCmd ) =
                     App.NumberInput.update subMsg model.durationInput
             in
-                ( { model | durationInput = updatedModel }, updateCmd )
+                { model | durationInput = updatedModel } ! [ updateCmd ]
 
 
 subsctiption : Model -> Sub Msg
