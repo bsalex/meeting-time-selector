@@ -1,7 +1,6 @@
 port module App exposing (Model, Msg, update, view, subscriptions, init)
 
 import Array exposing (..)
-import CitySelector
 import Header
 import Html exposing (..)
 import Html.Attributes exposing (..)
@@ -23,28 +22,19 @@ main =
 
 type alias Model =
     { participants : Array Participant.Model
-    , startTime : Float
-    , duration : Float
-    , city : CitySelector.Model
+    , meetingTimeSelector: MeetingTimeSelector.Model
     }
 
 
 type Msg
-    = StartTimeChanged Float
-    | DurationChanged Float
-    | AddParticipant
+    = AddParticipant
     | ParticipantMsg Int Participant.Msg
+    | MeetingTimeSelectorMsg MeetingTimeSelector.Msg
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
     case msg of
-        StartTimeChanged startTime ->
-            ( { model | startTime = startTime }, Cmd.none )
-
-        DurationChanged duration ->
-            ( { model | duration = duration }, Cmd.none )
-
         AddParticipant ->
             ( { model | participants = Array.push Participant.init model.participants }, Cmd.none )
 
@@ -62,6 +52,15 @@ update msg model =
                         , Cmd.map (ParticipantMsg index) updateCmd
                         )
 
+        MeetingTimeSelectorMsg subMsg ->
+                    let
+                        ( updatedModel, updateCmd ) =
+                            MeetingTimeSelector.update (Debug.log "subMsg" subMsg) model.meetingTimeSelector
+                    in
+                        ( { model | meetingTimeSelector = updatedModel }
+                        , Cmd.map MeetingTimeSelectorMsg updateCmd
+                        )
+
 
 view : Model -> Html Msg
 view model =
@@ -77,8 +76,8 @@ view model =
                 :: (Array.indexedMap (\index participant -> (Participant.view participant |> Html.map (ParticipantMsg index))) model.participants |> Array.toList)
             )
         , div [ class "app__timelines app__component" ]
-            ((MeetingIndicator.view model.startTime model.duration) :: (Array.map (\participant -> ParticipantTimeline.view participant model.startTime model.duration) model.participants |> Array.toList))
-        , MeetingTimeSelector.view [ class "app__meeting app__component" ] model.startTime (\value -> StartTimeChanged value) model.duration (\value -> DurationChanged value)
+            ((MeetingIndicator.view model.meetingTimeSelector.startTime model.meetingTimeSelector.duration) :: (Array.map (\participant -> ParticipantTimeline.view participant model.meetingTimeSelector.startTime model.meetingTimeSelector.duration) model.participants |> Array.toList))
+        , Html.map MeetingTimeSelectorMsg (MeetingTimeSelector.view [ class "app__meeting app__component" ] model.meetingTimeSelector)
         ]
 
 
@@ -90,13 +89,16 @@ type alias Place =
 
 subscriptions : Model -> Sub Msg
 subscriptions model =
+    Sub.batch [
     Sub.batch (
         Array.indexedMap (
             \index p -> Sub.map (\p1 -> ParticipantMsg index p1) (Participant.subsctiption p)
         ) model.participants |> Array.toList
     )
+    , Sub.map MeetingTimeSelectorMsg (MeetingTimeSelector.subsctiption model.meetingTimeSelector)
+    ]
 
 
 init : ( Model, Cmd Msg )
 init =
-    ( Model (Array.fromList [ Participant.init, Participant.init, Participant.init ]) 17.0 0.5 CitySelector.init, Cmd.none )
+    ( Model (Array.fromList [ Participant.init, Participant.init, Participant.init ]) MeetingTimeSelector.init, Cmd.none )
