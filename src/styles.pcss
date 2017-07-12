@@ -31,10 +31,9 @@ body * {
 
 .timeline {
     height: 50px;
-    display: flex;
-    justify-content: space-between;
     border-top: 2px solid black;
     position: relative;
+    overflow: hidden;
 }
 
 .timeline--not-matches-meeting::after {
@@ -46,6 +45,15 @@ body * {
     left: 0;
     background-color: #c00;
     opacity: 0.3;
+}
+
+.timeline__items {
+    display: flex;
+    justify-content: space-between;
+    width: 300%;
+    height: 100%;
+    margin-left: -100%;
+    transition: margin-left 350ms;
 }
 
 .timeline__item {

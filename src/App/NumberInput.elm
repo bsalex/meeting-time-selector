@@ -3,7 +3,7 @@ module App.NumberInput exposing (..)
 import Html exposing (..)
 import Html.Attributes exposing (..)
 import Html.Events exposing (..)
-import Json.Decode as Json
+import Json.Decode as Json exposing (decodeValue)
 import Task
 import Time
 
@@ -20,6 +20,11 @@ type alias Model msg =
     , overrideValue : String
     }
 
+type alias Options =
+    { min : Float
+    , max : Float
+    , step : Float
+    }
 
 update : Msg msg -> Model msg -> ( Model msg, Cmd msg )
 update msg model =
@@ -29,7 +34,7 @@ update msg model =
                 ( updatedModel, updateCmd ) =
                     update (Do payloadMsg) model
             in
-                { updatedModel | inputSub = (Time.every (Time.millisecond * 200) (\_ -> Debug.log "payload" payloadMsg)) } ! [ updateCmd ]
+                { updatedModel | inputSub = Time.every (Time.millisecond * 200) (always payloadMsg) } ! [ updateCmd ]
 
         EndRepeat ->
             { model | inputSub = Sub.none } ! []
@@ -92,14 +97,16 @@ inputChangeToMsg onShift currentValue stringValue =
         onShift ((Result.withDefault currentValue (String.toFloat stringValue)) - currentValue)
 
 
-view : Model msg -> Float -> Float -> (Float -> msg) -> Html (Msg msg)
-view model currentValue step onShift =
+view : Model msg -> Float -> Options -> (Float -> msg) -> Html (Msg msg)
+view model currentValue options onShift =
     let
+        incAvailable = currentValue + options.step <= options.max
+        decAvailable = currentValue - options.step >= options.min
         onInc =
-            onShift step
+            if incAvailable then onShift options.step else onShift 0
 
         onDec =
-            onShift -step
+            if decAvailable then onShift -options.step else onShift 0
     in
         span []
             [ input
@@ -119,11 +126,13 @@ view model currentValue step onShift =
             , button
                 [ onMouseDown (StartRepeat onInc)
                 , onMouseUp EndRepeat
+                , disabled <| not incAvailable
                 ]
                 [ text "+" ]
             , button
                 [ onMouseDown (StartRepeat onDec)
                 , onMouseUp EndRepeat
+                , disabled <| not decAvailable
                 ]
                 [ text "-" ]
             ]
