@@ -5,7 +5,8 @@
   "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "dev": "webpack-dev-server --host 0.0.0.0 --config \"./build/webpack.config.dev.js\" --watch --progress --hot --inline"
+    "dev": "webpack-dev-server --host 0.0.0.0 --config \"./build/webpack.config.dev.js\" --watch --progress --hot --inline",
+    "build": "webpack --config \"./build/webpack.config.prod.js\" --progress"
   },
   "repository": {
     "type": "git",
@@ -36,6 +37,7 @@
     "postcss-reporter": "^4.0.0",
     "postcss-url": "^7.0.0",
     "style-loader": "^0.18.2",
+    "uglifyjs-webpack-plugin": "^0.4.6",
     "webpack": "^3.0.0",
     "webpack-dev-server": "^2.5.0"
   },

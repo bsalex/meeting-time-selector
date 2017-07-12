@@ -39,6 +39,6 @@ timelineClass participant startTime duration =
         "timeline--not-matches-meeting"
 
 
-view : Participant.Model -> Float -> Float -> Html msg
-view participant startTime duration =
+view : Float -> Float -> Participant.Model -> Html msg
+view startTime duration participant =
     Timeline.view participant.timeZone participant.goodHours [ class (timelineClass participant startTime duration) ]

@@ -2,7 +2,10 @@ const path = require('path');
 const HtmlWebpackPlugin = require('html-webpack-plugin');
 const postcssReporter = require('postcss-reporter')({ clearMessages: true });
 const postcssCalc = require('postcss-calc')();
-const postcssCssnext = require('postcss-cssnext')({ browsers: ['last 2 versions'], features: { customProperties: false } });
+const postcssCssnext = require('postcss-cssnext')({
+    browsers: ['last 2 versions'],
+    features: { customProperties: false }
+});
 const postcssAtroot = require('postcss-atroot');
 const postcssExtend = require('postcss-extend');
 const postcssMixins = require('postcss-mixins');
@@ -11,6 +14,8 @@ const postcssImport = require('postcss-import');
 const postcssPropertyLookup = require('postcss-property-lookup');
 const postcssUrl = require('postcss-url')();
 const postcssHexrgba = require('postcss-hexrgba')();
+const UglifyJSPlugin = require('uglifyjs-webpack-plugin');
+const webpack = require('webpack');
 
 module.exports = {
     entry: '../src/index.js',
@@ -26,9 +31,7 @@ module.exports = {
                 exclude: [/elm-stuff/, /node_modules/],
                 use: {
                     loader: 'elm-webpack-loader',
-                    options: {
-
-                    }
+                    options: {}
                 }
             },
             {
@@ -88,13 +91,13 @@ module.exports = {
     devtool: 'source-map',
     context: __dirname,
     target: 'web',
-    devServer: {
-        proxy: {
-            '/api': 'http://localhost:3000'
-        },
-        compress: false,
-        historyApiFallback: false,
-        hot: true,
-        overlay: true
-    }
+    plugins: [
+        new webpack.LoaderOptionsPlugin({
+            minimize: true,
+            debug: false
+        }),
+        new UglifyJSPlugin({
+            extractComments: true
+        })
+    ]
 };
