@@ -126,12 +126,16 @@ view model currentValue options onShift =
             , button
                 [ onMouseDown (StartRepeat onInc)
                 , onMouseUp EndRepeat
+                , on "touchstart" (Json.succeed <| StartRepeat onInc)
+                , on "touchend" (Json.succeed <| EndRepeat)
                 , disabled <| not incAvailable
                 ]
                 [ text "+" ]
             , button
                 [ onMouseDown (StartRepeat onDec)
                 , onMouseUp EndRepeat
+                , on "touchstart" (Json.succeed <| StartRepeat onDec)
+                , on "touchend" (Json.succeed <| EndRepeat)
                 , disabled <| not decAvailable
                 ]
                 [ text "-" ]

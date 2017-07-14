@@ -29,6 +29,7 @@ type alias Model =
 
 type Msg
     = AddParticipant
+    | RemoveParticipant Int
     | ParticipantMsg Int Participant.Msg
     | MeetingTimeSelectorMsg MeetingTimeSelector.Msg
 
@@ -39,19 +40,17 @@ update msg model =
         AddParticipant ->
             { model | participants = Array.push Participant.init model.participants } ! []
 
-        ParticipantMsg index subMsg ->
-            case subMsg of
-                Participant.Remove ->
-                    { model | participants = Array.append (Array.slice 0 index model.participants) (Array.slice (index + 1) (Array.length model.participants) model.participants) } ! []
+        RemoveParticipant index ->
+            { model | participants = Array.append (Array.slice 0 index model.participants) (Array.slice (index + 1) (Array.length model.participants) model.participants) } ! []
 
-                _ ->
-                    let
-                        ( updatedParticipant, updateCmd ) =
-                            Participant.update subMsg (Maybe.withDefault Participant.init (Array.get index model.participants))
-                    in
-                        ( { model | participants = Array.set index updatedParticipant model.participants }
-                        , Cmd.map (ParticipantMsg index) updateCmd
-                        )
+        ParticipantMsg index subMsg ->
+            let
+                ( updatedParticipant, updateCmd ) =
+                    Participant.update subMsg (Maybe.withDefault Participant.init (Array.get index model.participants))
+            in
+                ( { model | participants = Array.set index updatedParticipant model.participants }
+                , Cmd.map (ParticipantMsg index) updateCmd
+                )
 
         MeetingTimeSelectorMsg subMsg ->
             let
@@ -74,7 +73,16 @@ view model =
                 ]
                 [ text "Add participant" ]
              )
-                :: (Array.toList <| Array.indexedMap (\index participant -> Html.map (ParticipantMsg index) <| Participant.view participant) model.participants)
+                :: (Array.toList <|
+                        Array.indexedMap
+                            (\index participant ->
+                                div []
+                                    [ Html.map (ParticipantMsg index) <| Participant.view participant
+                                    , button [ class "participant__remove", onClick <| RemoveParticipant index ] [ text "🗙" ]
+                                    ]
+                            )
+                            model.participants
+                   )
             )
         , div [ class "app__timelines app__component" ]
             ([ MeetingIndicator.view model.meetingTimeSelector.startTime model.meetingTimeSelector.duration ]

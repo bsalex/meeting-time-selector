@@ -18,7 +18,6 @@ type alias Model =
 
 type Msg
     = ShiftTimeZone Int
-    | Remove
     | ToggleManual
     | CityMsg CitySelector.Msg
     | NumberInputMsg (App.NumberInput.Msg Msg)
@@ -27,9 +26,6 @@ type Msg
 update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
     case msg of
-        Remove ->
-            model ! []
-
         ShiftTimeZone shift ->
             { model | timeZone = model.timeZone + shift } ! []
 
@@ -81,7 +77,6 @@ view model =
             , text "Set timezone mannually"
             ]
         , getInput model
-        , button [ class "participant__remove", onClick Remove ] [ text "🗙" ]
         ]
 
 
