@@ -10,13 +10,13 @@ import Time
 type Msg
     = EndRepeat
     | StartRepeat (Float -> Msg)
-    | ShiftValue Float Options (Float -> Float -> Float)
+    | ShiftValue Float Float Float (Float -> Float -> Float) Float
     | SetOverrideValue String
 
 
 type alias Model =
     { inputSub : Maybe (Float -> Msg)
-    , overrideValue : String
+    , overrideValue : Maybe String
     , value : Float
     }
 
@@ -46,21 +46,21 @@ update msg model =
         EndRepeat ->
             { model | inputSub = Maybe.Nothing } ! []
 
-        ShiftValue currentValue options operator ->
+        ShiftValue min max step operator currentValue ->
             let
                 shouldProceed =
                     if isPlusOperator operator then
-                        isIncAvailable currentValue options
+                        isIncAvailable currentValue max step
                     else
-                        isDecAvailable currentValue options
+                        isDecAvailable currentValue min step
             in
                 if shouldProceed then
-                    { model | value = operator currentValue options.step } ! []
+                    { model | value = operator currentValue step, overrideValue = Maybe.Nothing } ! []
                 else
-                    { model | inputSub = Maybe.Nothing } ! []
+                    { model | inputSub = Maybe.Nothing, overrideValue = Maybe.Nothing } ! []
 
         SetOverrideValue value ->
-            { model | overrideValue = value } ! []
+            { model | overrideValue = Maybe.Just value } ! []
 
 
 wheelEventToMessage : Msg -> Msg -> Json.Decoder Msg
@@ -100,33 +100,53 @@ inputKeyCodeToMsg onInc onDec =
     )
 
 
-inputChangeToMsg : (Float -> Msg) -> Float -> String -> Msg
-inputChangeToMsg onShift currentValue stringValue =
-    if (stringValue == "-" || stringValue == "+") then
-        SetOverrideValue stringValue
-    else if stringValue == "0-" then
-        SetOverrideValue "-"
-    else if stringValue == "0+" then
-        SetOverrideValue "+"
-    else if stringValue == "" then
-        onShift -currentValue
-    else
-        onShift <| (Result.withDefault currentValue (String.toFloat stringValue)) - currentValue
+isIncAvailable : Float -> Float -> Float -> Bool
+isIncAvailable currentValue max step =
+    currentValue + step <= max
 
 
-isIncAvailable : Float -> Options -> Bool
-isIncAvailable currentValue options =
-    currentValue + options.step <= options.max
-
-
-isDecAvailable : Float -> Options -> Bool
-isDecAvailable currentValue options =
-    currentValue - options.step >= options.min
+isDecAvailable : Float -> Float -> Float -> Bool
+isDecAvailable currentValue min step =
+    currentValue - step >= min
 
 
 identityOfFirstArgument : a -> a -> a
 identityOfFirstArgument firstArgument _ =
     firstArgument
+
+
+inputChangeToMsg : (Float -> Float -> Msg) -> Float -> String -> Msg
+inputChangeToMsg onShift currentValue stringValue =
+    case stringValue of
+        "-" ->
+            SetOverrideValue stringValue
+
+        "+" ->
+            SetOverrideValue stringValue
+
+        "" ->
+            onShift currentValue -currentValue
+
+        "0-" ->
+            SetOverrideValue "-"
+
+        "0+" ->
+            SetOverrideValue "+"
+
+        _ ->
+            let
+                parsedFloatValue =
+                    String.toFloat stringValue
+            in
+                case parsedFloatValue of
+                    Result.Ok value ->
+                        if String.endsWith "." stringValue then
+                            SetOverrideValue stringValue
+                        else
+                            onShift currentValue <| value - currentValue
+
+                    Result.Err _ ->
+                        onShift currentValue 0
 
 
 view : Model -> Options -> Html Msg
@@ -136,46 +156,48 @@ view model options =
             model.value
 
         incAvailable =
-            isIncAvailable currentValue options
+            isIncAvailable currentValue options.max options.step
 
         decAvailable =
-            isDecAvailable currentValue options
+            isDecAvailable currentValue options.min options.step
 
         onInc =
             if incAvailable then
-                ShiftValue model.value options (+)
+                ShiftValue options.min options.max options.step (+) model.value
             else
-                ShiftValue model.value options identityOfFirstArgument
+                ShiftValue options.min options.max options.step identityOfFirstArgument model.value
 
         onDec =
             if decAvailable then
-                ShiftValue model.value options (-)
+                ShiftValue options.min options.max options.step (-) model.value
             else
-                ShiftValue model.value options identityOfFirstArgument
+                ShiftValue options.min options.max options.step identityOfFirstArgument model.value
     in
         span []
             [ input
                 [ value
-                    (if model.overrideValue /= "" then
-                        model.overrideValue
-                     else
-                        (toString currentValue)
+                    (case model.overrideValue of
+                        Just overrideValue ->
+                            overrideValue
+
+                        Nothing ->
+                            toString currentValue
                     )
                 , on "wheel" <| wheelEventToMessage onInc onDec
                 , onWithOptions "keydown"
                     { preventDefault = True, stopPropagation = False }
-                    (inputKeyCodeToMsg (onInc) (onDec))
-                , onInput (inputChangeToMsg (\x -> ShiftValue x options (+)) currentValue)
+                    (inputKeyCodeToMsg onInc onDec)
+                , onInput <| inputChangeToMsg (\step -> ShiftValue options.min options.max step (+)) currentValue
                 ]
                 []
             , button
-                [ onMouseDown (StartRepeat (\a -> ShiftValue a options (+)))
+                [ onMouseDown (StartRepeat <| ShiftValue options.min options.max options.step (+))
                 , onMouseUp EndRepeat
                 , disabled <| not incAvailable
                 ]
                 [ text "+" ]
             , button
-                [ onMouseDown (StartRepeat (\a -> ShiftValue a options (-)))
+                [ onMouseDown (StartRepeat <| ShiftValue options.min options.max options.step (-))
                 , onMouseUp EndRepeat
                 , disabled <| not decAvailable
                 ]
@@ -185,7 +207,7 @@ view model options =
 
 init : Model
 init =
-    { inputSub = Maybe.Nothing, overrideValue = "", value = 0 }
+    { inputSub = Maybe.Nothing, overrideValue = Maybe.Nothing, value = 0 }
 
 
 subscription : Model -> Sub Msg
