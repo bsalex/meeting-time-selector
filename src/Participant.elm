@@ -8,27 +8,22 @@ import App.NumberInput
 
 
 type alias Model =
-    { timeZone : Int
-    , goodHours : List Int
+    { goodHours : List Int
     , isManual : Bool
     , city : CitySelector.Model
-    , numberInput : App.NumberInput.Model Msg
+    , numberInput : App.NumberInput.Model
     }
 
 
 type Msg
-    = ShiftTimeZone Int
-    | ToggleManual
+    = ToggleManual
     | CityMsg CitySelector.Msg
-    | NumberInputMsg (App.NumberInput.Msg Msg)
+    | NumberInputMsg App.NumberInput.Msg
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
     case msg of
-        ShiftTimeZone shift ->
-            { model | timeZone = model.timeZone + shift } ! []
-
         ToggleManual ->
             { model | isManual = not model.isManual } ! []
 
@@ -45,8 +40,14 @@ update msg model =
                     let
                         ( updatedModel, updateCmd ) =
                             CitySelector.update subMsg model.city
+
+                        inputModel =
+                            model.numberInput
+
+                        updatedInputModel =
+                            { inputModel | value = toFloat shift }
                     in
-                        { model | city = updatedModel, timeZone = shift } ! [ Cmd.map CityMsg updateCmd ]
+                        { model | city = updatedModel, numberInput = updatedInputModel } ! [ Cmd.map CityMsg updateCmd ]
 
                 _ ->
                     let
@@ -59,7 +60,7 @@ update msg model =
 getInput : Model -> Html Msg
 getInput model =
     if model.isManual then
-        Html.map NumberInputMsg (App.NumberInput.view model.numberInput (toFloat model.timeZone) {step = 1, min = -12, max = 14} (ShiftTimeZone << floor))
+        Html.map NumberInputMsg (App.NumberInput.view model.numberInput { step = 1, min = -12, max = 14 })
     else
         Html.map CityMsg (CitySelector.view model.city)
 
@@ -82,9 +83,9 @@ view model =
 
 init : Model
 init =
-    Model 0 (List.range 9 17) False CitySelector.init App.NumberInput.init
+    Model (List.range 9 17) False CitySelector.init App.NumberInput.init
 
 
 subsctiption : Model -> Sub Msg
 subsctiption model =
-    model.numberInput.inputSub
+    Sub.map NumberInputMsg (App.NumberInput.subscription model.numberInput)

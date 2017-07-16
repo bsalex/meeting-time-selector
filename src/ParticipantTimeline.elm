@@ -12,13 +12,13 @@ matchesGoodTime participant startTime duration =
         startGoodTime =
             List.minimum participant.goodHours
                 |> Maybe.withDefault 0
-                |> flip (-) participant.timeZone
+                |> (flip (-) <| floor participant.numberInput.value)
                 |> toFloat
 
         endGoodTime =
             List.maximum participant.goodHours
                 |> Maybe.withDefault 24
-                |> flip (-) participant.timeZone
+                |> (flip (-) <| floor participant.numberInput.value)
                 |> (+) 1
                 |> toFloat
 
@@ -41,4 +41,4 @@ timelineClass participant startTime duration =
 
 view : Float -> Float -> Participant.Model -> Html msg
 view startTime duration participant =
-    Timeline.view participant.timeZone participant.goodHours [ class (timelineClass participant startTime duration) ]
+    Timeline.view (floor participant.numberInput.value) participant.goodHours [ class (timelineClass participant startTime duration) ]

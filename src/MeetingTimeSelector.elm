@@ -5,39 +5,29 @@ import App.NumberInput
 
 
 type alias Model =
-    { startTimeInput : App.NumberInput.Model Msg
-    , durationInput : App.NumberInput.Model Msg
-    , startTime : Float
-    , duration : Float
+    { startTimeInput : App.NumberInput.Model
+    , durationInput : App.NumberInput.Model
     }
 
 
 type Msg
-    = StartTimeNumberInputMsg (App.NumberInput.Msg Msg)
-    | DurationNumberInputMsg (App.NumberInput.Msg Msg)
-    | ShiftStartTime Float
-    | ShiftDuration Float
+    = StartTimeNumberInputMsg App.NumberInput.Msg
+    | DurationNumberInputMsg App.NumberInput.Msg
 
 
 view : List (Html.Attribute Msg) -> Model -> Html Msg
 view attributes model =
     div ([] ++ attributes)
         [ span [] [ text "Start time (UTC +0)" ]
-        , Html.map StartTimeNumberInputMsg <| App.NumberInput.view model.startTimeInput model.startTime {step = 0.25, min = 0, max = 24 - model.duration} ShiftStartTime
+        , Html.map StartTimeNumberInputMsg <| App.NumberInput.view model.startTimeInput { step = 0.25, min = 0, max = 24 - model.durationInput.value }
         , span [] [ text "Duration" ]
-        , Html.map DurationNumberInputMsg <| App.NumberInput.view model.durationInput model.duration {step = 0.25, min = 0, max = 24 - model.startTime} ShiftDuration
+        , Html.map DurationNumberInputMsg <| App.NumberInput.view model.durationInput { step = 0.25, min = 0, max = 24 - model.startTimeInput.value }
         ]
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
     case msg of
-        ShiftStartTime shift ->
-            { model | startTime = model.startTime + shift } ! []
-
-        ShiftDuration shift ->
-            { model | duration = model.duration + shift } ! []
-
         StartTimeNumberInputMsg subMsg ->
             let
                 ( updatedModel, updateCmd ) =
@@ -55,9 +45,9 @@ update msg model =
 
 subsctiption : Model -> Sub Msg
 subsctiption model =
-    Sub.batch [ model.startTimeInput.inputSub, model.durationInput.inputSub ]
+    Sub.batch [ Sub.map StartTimeNumberInputMsg (App.NumberInput.subscription model.startTimeInput), Sub.map DurationNumberInputMsg (App.NumberInput.subscription model.durationInput) ]
 
 
 init : Model
 init =
-    Model App.NumberInput.init App.NumberInput.init 17 1
+    Model App.NumberInput.init App.NumberInput.init

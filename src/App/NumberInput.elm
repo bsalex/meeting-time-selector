@@ -4,21 +4,22 @@ import Html exposing (..)
 import Html.Attributes exposing (..)
 import Html.Events exposing (..)
 import Json.Decode as Json exposing (decodeValue)
-import Task
 import Time
 
 
-type Msg msg
+type Msg
     = EndRepeat
-    | Do msg
-    | StartRepeat msg
+    | StartRepeat (Float -> Msg)
+    | ShiftValue Float Options (Float -> Float -> Float)
     | SetOverrideValue String
 
 
-type alias Model msg =
-    { inputSub : Sub msg
+type alias Model =
+    { inputSub : Maybe (Float -> Msg)
     , overrideValue : String
+    , value : Float
     }
+
 
 type alias Options =
     { min : Float
@@ -26,27 +27,43 @@ type alias Options =
     , step : Float
     }
 
-update : Msg msg -> Model msg -> ( Model msg, Cmd msg )
+
+isPlusOperator : (number -> number -> number) -> Bool
+isPlusOperator operator =
+    operator 7 8 == 15
+
+
+update : Msg -> Model -> ( Model, Cmd msg )
 update msg model =
     case msg of
         StartRepeat payloadMsg ->
             let
                 ( updatedModel, updateCmd ) =
-                    update (Do payloadMsg) model
+                    update (payloadMsg model.value) model
             in
-                { updatedModel | inputSub = Time.every (Time.millisecond * 200) (always payloadMsg) } ! [ updateCmd ]
+                { updatedModel | inputSub = Maybe.Just payloadMsg } ! [ updateCmd ]
 
         EndRepeat ->
-            { model | inputSub = Sub.none } ! []
+            { model | inputSub = Maybe.Nothing } ! []
 
-        Do payloadMsg ->
-            { model | overrideValue = "" } ! [ Task.perform identity (Task.succeed payloadMsg) ]
+        ShiftValue currentValue options operator ->
+            let
+                shouldProceed =
+                    if isPlusOperator operator then
+                        isIncAvailable currentValue options
+                    else
+                        isDecAvailable currentValue options
+            in
+                if shouldProceed then
+                    { model | value = operator currentValue options.step } ! []
+                else
+                    { model | inputSub = Maybe.Nothing } ! []
 
         SetOverrideValue value ->
             { model | overrideValue = value } ! []
 
 
-wheelEventToMessage : msg -> msg -> Json.Decoder msg
+wheelEventToMessage : Msg -> Msg -> Json.Decoder Msg
 wheelEventToMessage onInc onDec =
     Json.map
         (\delta ->
@@ -58,7 +75,7 @@ wheelEventToMessage onInc onDec =
         (Json.field "deltaY" Json.int)
 
 
-inputKeyCodeToMsg : msg -> msg -> Json.Decoder msg
+inputKeyCodeToMsg : Msg -> Msg -> Json.Decoder Msg
 inputKeyCodeToMsg onInc onDec =
     ((Json.map
         (\code ->
@@ -83,7 +100,7 @@ inputKeyCodeToMsg onInc onDec =
     )
 
 
-inputChangeToMsg : (Float -> Msg msg) -> Float -> String -> Msg msg
+inputChangeToMsg : (Float -> Msg) -> Float -> String -> Msg
 inputChangeToMsg onShift currentValue stringValue =
     if (stringValue == "-" || stringValue == "+") then
         SetOverrideValue stringValue
@@ -94,19 +111,47 @@ inputChangeToMsg onShift currentValue stringValue =
     else if stringValue == "" then
         onShift -currentValue
     else
-        onShift ((Result.withDefault currentValue (String.toFloat stringValue)) - currentValue)
+        onShift <| (Result.withDefault currentValue (String.toFloat stringValue)) - currentValue
 
 
-view : Model msg -> Float -> Options -> (Float -> msg) -> Html (Msg msg)
-view model currentValue options onShift =
+isIncAvailable : Float -> Options -> Bool
+isIncAvailable currentValue options =
+    currentValue + options.step <= options.max
+
+
+isDecAvailable : Float -> Options -> Bool
+isDecAvailable currentValue options =
+    currentValue - options.step >= options.min
+
+
+identityOfFirstArgument : a -> a -> a
+identityOfFirstArgument firstArgument _ =
+    firstArgument
+
+
+view : Model -> Options -> Html Msg
+view model options =
     let
-        incAvailable = currentValue + options.step <= options.max
-        decAvailable = currentValue - options.step >= options.min
+        currentValue =
+            model.value
+
+        incAvailable =
+            isIncAvailable currentValue options
+
+        decAvailable =
+            isDecAvailable currentValue options
+
         onInc =
-            if incAvailable then onShift options.step else onShift 0
+            if incAvailable then
+                ShiftValue model.value options (+)
+            else
+                ShiftValue model.value options identityOfFirstArgument
 
         onDec =
-            if decAvailable then onShift -options.step else onShift 0
+            if decAvailable then
+                ShiftValue model.value options (-)
+            else
+                ShiftValue model.value options identityOfFirstArgument
     in
         span []
             [ input
@@ -116,37 +161,38 @@ view model currentValue options onShift =
                      else
                         (toString currentValue)
                     )
-                , on "wheel" (wheelEventToMessage (Do onInc) (Do onDec))
+                , on "wheel" <| wheelEventToMessage onInc onDec
                 , onWithOptions "keydown"
                     { preventDefault = True, stopPropagation = False }
-                    (inputKeyCodeToMsg (Do onInc) (Do onDec))
-                , onInput (inputChangeToMsg (\v -> Do (onShift v)) currentValue)
+                    (inputKeyCodeToMsg (onInc) (onDec))
+                , onInput (inputChangeToMsg (\x -> ShiftValue x options (+)) currentValue)
                 ]
                 []
             , button
-                [ onMouseDown (StartRepeat onInc)
+                [ onMouseDown (StartRepeat (\a -> ShiftValue a options (+)))
                 , onMouseUp EndRepeat
-                , on "touchstart" (Json.succeed <| StartRepeat onInc)
-                , on "touchend" (Json.succeed <| EndRepeat)
                 , disabled <| not incAvailable
                 ]
                 [ text "+" ]
             , button
-                [ onMouseDown (StartRepeat onDec)
+                [ onMouseDown (StartRepeat (\a -> ShiftValue a options (-)))
                 , onMouseUp EndRepeat
-                , on "touchstart" (Json.succeed <| StartRepeat onDec)
-                , on "touchend" (Json.succeed <| EndRepeat)
                 , disabled <| not decAvailable
                 ]
                 [ text "-" ]
             ]
 
 
-init : Model msg
+init : Model
 init =
-    { inputSub = Sub.none, overrideValue = "" }
+    { inputSub = Maybe.Nothing, overrideValue = "", value = 0 }
 
 
-subscription : Model msg -> Sub msg
+subscription : Model -> Sub Msg
 subscription model =
-    model.inputSub
+    case model.inputSub of
+        Maybe.Just payloadMsg ->
+            Time.every (Time.millisecond * 200) (always <| payloadMsg model.value)
+
+        Nothing ->
+            Sub.none
