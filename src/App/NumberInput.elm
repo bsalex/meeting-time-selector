@@ -49,10 +49,7 @@ update msg model =
         ShiftValue min max step operator currentValue ->
             let
                 shouldProceed =
-                    if isPlusOperator operator then
-                        isIncAvailable currentValue max step
-                    else
-                        isDecAvailable currentValue min step
+                    isOperationAvailable min max step currentValue operator
             in
                 if shouldProceed then
                     { model | value = operator currentValue step, overrideValue = Maybe.Nothing } ! []
@@ -100,14 +97,13 @@ inputKeyCodeToMsg onInc onDec =
     )
 
 
-isIncAvailable : Float -> Float -> Float -> Bool
-isIncAvailable currentValue max step =
-    currentValue + step <= max
-
-
-isDecAvailable : Float -> Float -> Float -> Bool
-isDecAvailable currentValue min step =
-    currentValue - step >= min
+isOperationAvailable : Float -> Float -> Float -> Float -> (Float -> Float -> Float) -> Bool
+isOperationAvailable min max step currentValue operation =
+    let
+        updatedValue =
+            operation currentValue step
+    in
+        min <= updatedValue && updatedValue <= max
 
 
 identityOfFirstArgument : a -> a -> a
@@ -156,10 +152,10 @@ view model options =
             model.value
 
         incAvailable =
-            isIncAvailable currentValue options.max options.step
+            isOperationAvailable options.min options.max options.step currentValue (+)
 
         decAvailable =
-            isDecAvailable currentValue options.min options.step
+            isOperationAvailable options.min options.max options.step currentValue (-)
 
         onInc =
             if incAvailable then
