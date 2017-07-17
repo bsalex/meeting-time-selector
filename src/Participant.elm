@@ -88,4 +88,6 @@ init =
 
 subsctiption : Model -> Sub Msg
 subsctiption model =
-    Sub.map NumberInputMsg (App.NumberInput.subscription model.numberInput)
+    Sub.batch [ Sub.map NumberInputMsg <| App.NumberInput.subscription model.numberInput
+              , Sub.map CityMsg <| CitySelector.subscriptions model.city
+              ]

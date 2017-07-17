@@ -70,11 +70,6 @@ getTimezone query =
     TeleportCityTimeZoneResolver.resolveTimeZone GotTimezone query
 
 
-deb1 : (a -> Msg) -> (a -> Msg)
-deb1 =
-    Debounce.debounce1 cfg
-
-
 debCmd : Msg -> Cmd Msg
 debCmd =
     Debounce.debounceCmd cfg
@@ -118,7 +113,7 @@ update msg model =
                     Autocomplete.update updateConfig autoMsg model.howManyToShow model.autoState (acceptablePlaces model.query model.places)
 
                 newModel =
-                    { model | autoState = newState }
+                    Debug.log "SetAutoState" { model | autoState = newState }
             in
                 case maybeMsg of
                     Nothing ->
@@ -316,7 +311,7 @@ updateConfig =
         { toId = .placeId
         , onKeyDown =
             \code maybeId ->
-                if code == 38 || code == 40 then
+                if Debug.log "code" code == 38 || code == 40 then
                     Maybe.map PreviewPlace maybeId
                 else if code == 13 then
                     Maybe.map SelectPlaceKeyboard maybeId
@@ -326,7 +321,7 @@ updateConfig =
         , onTooHigh = Just <| Wrap True
         , onMouseEnter = \id -> Just <| PreviewPlace id
         , onMouseLeave = \_ -> Nothing
-        , onMouseClick = \id -> Just <| SelectPlaceMouse (Debug.log "selectedId" id)
+        , onMouseClick = \id -> Just <| SelectPlaceMouse id
         , separateSelections = False
         }
 
@@ -347,3 +342,7 @@ viewConfig =
             , ul = [ class "autocomplete-list" ]
             , li = customizedLi
             }
+
+subscriptions : Model -> Sub Msg
+subscriptions model =
+    Sub.map SetAutoState Autocomplete.subscription
