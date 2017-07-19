@@ -19,6 +19,6 @@ view shift goodHours attributes =
                         ]
                         [ text (toString number) ]
                 )
-                ((List.range 0 23) ++ (List.range 0 23) ++ (List.range 0 23))
+                (List.concat <| List.repeat 3 (List.range 0 23))
             )
         ]

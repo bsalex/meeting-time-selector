@@ -27,8 +27,10 @@ matchesGoodTime participant startTime duration =
 
         endMeeting =
             startTime + duration
+
+        shifts = [-24, 0, 24]
     in
-        startGoodTime <= startMeeging && endMeeting <= endGoodTime
+        List.any (\shift -> startGoodTime + shift <= startMeeging && endMeeting <= endGoodTime + shift) shifts
 
 
 timelineClass : Participant.Model -> Float -> Float -> String
