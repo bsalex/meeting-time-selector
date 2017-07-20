@@ -75,7 +75,7 @@ view model =
                 , onClick ToggleManual
                 ]
                 []
-            , text "Set timezone mannually"
+            , text "Set timezone manually"
             ]
         , getInput model
         ]

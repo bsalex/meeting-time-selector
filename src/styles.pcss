@@ -15,7 +15,7 @@ body * {
     margin: 0 auto;
 
     &__component + &__component {
-        margin-top: 15px;
+        margin-top: 25px;
     }
 }
 
@@ -27,6 +27,8 @@ body * {
 
 .app__timelines {
     position: relative;
+    border: 1px solid #222;
+    border-top-width: 0;
 }
 
 .app__participant {
@@ -34,8 +36,8 @@ body * {
 }
 
 .timeline {
-    height: 50px;
-    border-top: 2px solid black;
+    height: 60px;
+    border-top: 2px solid #222;
     position: relative;
     overflow: hidden;
 }
@@ -80,9 +82,9 @@ body * {
     content: '';
     width: 0;
     height: 5px;
-    border-left: 1px solid black;
+    border-left: 2px solid #222;
     top: 0;
-    left: 0;
+    left: -1px;
     position: absolute;
 }
 
@@ -90,9 +92,9 @@ body * {
     content: '';
     width: 0;
     height: 5px;
-    border-left: 1px solid black;
+    border-left: 1px solid #222;
     top: 0;
-    right: 0;
+    right: -1px;
     position: absolute;
 }
 
