@@ -51,3 +51,13 @@ subsctiption model =
 init : Model
 init =
     Model App.NumberInput.init App.NumberInput.init
+
+
+startTime : Model -> Float
+startTime model =
+    model.startTimeInput.value
+
+
+duration : Model -> Float
+duration model =
+    model.durationInput.value

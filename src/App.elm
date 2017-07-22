@@ -85,7 +85,7 @@ view model =
                    )
             )
         , div [ class "app__timelines app__component" ]
-            ([ MeetingIndicator.view model.meetingTimeSelector.startTimeInput.value model.meetingTimeSelector.durationInput.value ]
+            ([ MeetingIndicator.view (MeetingTimeSelector.startTime model.meetingTimeSelector) (MeetingTimeSelector.duration model.meetingTimeSelector) ]
                 ++ (Array.toList <| Array.map (ParticipantTimeline.view model.meetingTimeSelector.startTimeInput.value model.meetingTimeSelector.durationInput.value) model.participants)
             )
         , Html.map MeetingTimeSelectorMsg (MeetingTimeSelector.view [ class "app__meeting app__component" ] model.meetingTimeSelector)
