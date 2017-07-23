@@ -10,7 +10,7 @@ import Time
 type Msg
     = EndRepeat
     | StartRepeat (Float -> Msg)
-    | ShiftValue Float Float Float (Float -> Float -> Float) Float
+    | ChangeValue Float Float Float (Float -> Float -> Float) Float
     | SetOverrideValue String
 
 
@@ -46,7 +46,7 @@ update msg model =
         EndRepeat ->
             { model | inputSub = Maybe.Nothing } ! []
 
-        ShiftValue min max step operator currentValue ->
+        ChangeValue min max step operator currentValue ->
             let
                 shouldProceed =
                     isOperationAvailable min max step currentValue operator
@@ -159,15 +159,15 @@ view model options =
 
         onInc =
             if incAvailable then
-                ShiftValue options.min options.max options.step (+) model.value
+                ChangeValue options.min options.max options.step (+) model.value
             else
-                ShiftValue options.min options.max options.step identityOfFirstArgument model.value
+                ChangeValue options.min options.max options.step identityOfFirstArgument model.value
 
         onDec =
             if decAvailable then
-                ShiftValue options.min options.max options.step (-) model.value
+                ChangeValue options.min options.max options.step (-) model.value
             else
-                ShiftValue options.min options.max options.step identityOfFirstArgument model.value
+                ChangeValue options.min options.max options.step identityOfFirstArgument model.value
     in
         span []
             [ input
@@ -183,17 +183,17 @@ view model options =
                 , onWithOptions "keydown"
                     { preventDefault = True, stopPropagation = False }
                     (inputKeyCodeToMsg onInc onDec)
-                , onInput <| inputChangeToMsg (\step -> ShiftValue options.min options.max step (+)) currentValue
+                , onInput <| inputChangeToMsg (\step -> ChangeValue options.min options.max step (+)) currentValue
                 ]
                 []
             , button
-                [ onMouseDown (StartRepeat <| ShiftValue options.min options.max options.step (+))
+                [ onMouseDown (StartRepeat <| ChangeValue options.min options.max options.step (+))
                 , onMouseUp EndRepeat
                 , disabled <| not incAvailable
                 ]
                 [ text "+" ]
             , button
-                [ onMouseDown (StartRepeat <| ShiftValue options.min options.max options.step (-))
+                [ onMouseDown (StartRepeat <| ChangeValue options.min options.max options.step (-))
                 , onMouseUp EndRepeat
                 , disabled <| not decAvailable
                 ]
