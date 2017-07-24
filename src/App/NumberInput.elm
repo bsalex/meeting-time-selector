@@ -169,9 +169,10 @@ view model options =
             else
                 ChangeValue options.min options.max options.step identityOfFirstArgument model.value
     in
-        span []
+        span [ class "number-input" ]
             [ input
-                [ value
+                [ class "number-input__input"
+                , value
                     (case model.overrideValue of
                         Just overrideValue ->
                             overrideValue
@@ -190,12 +191,14 @@ view model options =
                 [ onMouseDown (StartRepeat <| ChangeValue options.min options.max options.step (+))
                 , onMouseUp EndRepeat
                 , disabled <| not incAvailable
+                , class "number-input__action number-input__action--plus"
                 ]
                 [ text "+" ]
             , button
                 [ onMouseDown (StartRepeat <| ChangeValue options.min options.max options.step (-))
                 , onMouseUp EndRepeat
                 , disabled <| not decAvailable
+                , class "number-input__action number-input__action--minus"
                 ]
                 [ text "-" ]
             ]
